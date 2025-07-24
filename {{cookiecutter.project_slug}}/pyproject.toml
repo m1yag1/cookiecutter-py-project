@@ -1,0 +1,171 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "{{cookiecutter.project_slug}}"
+version = "{{cookiecutter.version}}"
+description = "{{cookiecutter.project_short_description}}"
+readme = "README.md"
+requires-python = ">={{cookiecutter.python_version}}"
+{%- if cookiecutter.open_source_license != "Not open source" %}
+license = {text = "{{cookiecutter.open_source_license}}"}
+{%- endif %}
+authors = [
+    {name = "{{cookiecutter.full_name}}", email = "{{cookiecutter.email}}"},
+]
+{%- if cookiecutter.publish_to_pypi == 'yes' %}
+keywords = ["python", "{{cookiecutter.project_slug}}", "development"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+{%- if cookiecutter.open_source_license == "MIT" %}
+    "License :: OSI Approved :: MIT License",
+{%- elif cookiecutter.open_source_license == "BSD-3-Clause" %}
+    "License :: OSI Approved :: BSD License",
+{%- elif cookiecutter.open_source_license == "Apache-2.0" %}
+    "License :: OSI Approved :: Apache Software License",
+{%- elif cookiecutter.open_source_license == "GPL-3.0" %}
+    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+{%- endif %}
+    "Operating System :: OS Independent",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: {{cookiecutter.python_version}}",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: Implementation :: CPython",
+{%- if cookiecutter.use_cli == 'yes' %}
+    "Environment :: Console",
+    "Topic :: Utilities",
+{%- endif %}
+]
+{%- endif %}
+dependencies = [
+{%- if cookiecutter.use_cli == 'yes' %}
+    "click>=8.1.0",
+    "rich>=13.0.0",
+{%- endif %}
+]
+
+[dependency-groups]
+dev = [
+    { include-group = "test" },
+    { include-group = "type" },
+    "pre-commit>=3.5.0",
+    "tox>=4.0.0",
+]
+test = [
+    "pytest>=8.0.0",
+    "pytest-cov>=4.1.0",
+    "ruff>=0.1.0",
+]
+type = [
+    "mypy>=1.8.0",
+{%- if cookiecutter.use_cli == 'yes' %}
+    "types-click",
+{%- endif %}
+]
+
+{%- if cookiecutter.publish_to_pypi == 'yes' %}
+
+[project.urls]
+Homepage = "https://github.com/{{cookiecutter.github_username}}/{{cookiecutter.project_slug}}"
+Documentation = "https://github.com/{{cookiecutter.github_username}}/{{cookiecutter.project_slug}}#readme"
+Repository = "https://github.com/{{cookiecutter.github_username}}/{{cookiecutter.project_slug}}.git"
+Issues = "https://github.com/{{cookiecutter.github_username}}/{{cookiecutter.project_slug}}/issues"
+Changelog = "https://github.com/{{cookiecutter.github_username}}/{{cookiecutter.project_slug}}/blob/main/CHANGELOG.md"
+{%- endif %}
+
+{%- if cookiecutter.use_cli == 'yes' %}
+
+[project.scripts]
+{{cookiecutter.project_slug}} = "{{cookiecutter.project_slug}}.cli:main"
+{%- endif %}
+
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/{{cookiecutter.project_slug}}"]
+
+[tool.coverage.run]
+source = ["src/{{cookiecutter.project_slug}}"]
+branch = true
+parallel = true
+
+[tool.coverage.paths]
+source = [
+    "src/{{cookiecutter.project_slug}}",
+    "*/site-packages/{{cookiecutter.project_slug}}",
+]
+
+[tool.coverage.report]
+precision = 2
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if TYPE_CHECKING:",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "pass",
+]
+
+[tool.mypy]
+python_version = "{{cookiecutter.python_version}}"
+strict = true
+warn_unreachable = true
+pretty = true
+show_column_numbers = true
+show_error_context = true
+
+[tool.ruff]
+line-length = {{cookiecutter.line_length}}
+target-version = "py{{cookiecutter.python_version.replace('.', '')}}"
+
+[tool.ruff.lint]
+select = [
+    "E",  # pycodestyle errors
+    "W",  # pycodestyle warnings
+    "F",  # pyflakes
+    "I",  # isort
+    "UP", # pyupgrade
+    "B",  # flake8-bugbear
+    "C4", # flake8-comprehensions
+    "DTZ", # flake8-datetimez
+    "T10", # flake8-debugger
+    "EXE", # flake8-executable
+    "ISC", # flake8-implicit-str-concat
+    "ICN", # flake8-import-conventions
+    "G", # flake8-logging-format
+    "INP", # flake8-no-pep420
+    "PIE", # flake8-pie
+    "T20", # flake8-print
+    "PT", # flake8-pytest-style
+    "RET", # flake8-return
+    "SIM", # flake8-simplify
+    "TID", # flake8-tidy-imports
+    "ARG", # flake8-unused-arguments
+    "PTH", # flake8-use-pathlib
+    "ERA", # eradicate
+    "PD", # pandas-vet
+    "PGH", # pygrep-hooks
+    "PL", # pylint
+    "TRY", # tryceratops
+    "RUF", # ruff-specific
+]
+ignore = [
+    "PLR0913", # Too many arguments
+    "E501", # Line too long (handled by black)
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["{{cookiecutter.project_slug}}"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S101", "PLR2004"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"

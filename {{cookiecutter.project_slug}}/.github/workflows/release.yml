@@ -1,0 +1,94 @@
+{% if cookiecutter.publish_to_pypi == 'yes' -%}
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+  id-token: write  # For trusted publishing
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    outputs:
+      artifact-name: {% raw %}${{ steps.artifact.outputs.name }}{% endraw %}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+
+      - name: Set up Python
+        run: uv python install {{cookiecutter.python_version}}
+
+      - name: Build package
+        run: uv build
+
+      - name: Upload build artifacts
+        id: artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-{% raw %}${{ github.sha }}{% endraw %}
+          path: dist/
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: {% raw %}${{ needs.build.outputs.artifact-name }}{% endraw %}
+          path: dist/
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*
+          generate_release_notes: true
+
+  test-publish:
+    needs: [build, release]
+    runs-on: ubuntu-latest
+    environment:
+      name: test-pypi
+      url: https://test.pypi.org/project/{{cookiecutter.project_slug}}/
+    steps:
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: {% raw %}${{ needs.build.outputs.artifact-name }}{% endraw %}
+          path: dist/
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+
+      - name: Publish to Test PyPI
+        env:
+          UV_PUBLISH_TOKEN: {% raw %}${{ secrets.TEST_PYPI_API_TOKEN }}{% endraw %}
+        run: uv publish --publish-url https://test.pypi.org/legacy/
+
+  publish:
+    needs: [build, release, test-publish]
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/project/{{cookiecutter.project_slug}}/
+    steps:
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: {% raw %}${{ needs.build.outputs.artifact-name }}{% endraw %}
+          path: dist/
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+
+      - name: Publish to PyPI
+        env:
+          UV_PUBLISH_TOKEN: {% raw %}${{ secrets.PYPI_API_TOKEN }}{% endraw %}
+        run: uv publish
+{%- endif %}
